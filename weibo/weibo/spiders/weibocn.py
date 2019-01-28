@@ -48,3 +48,34 @@ class WeibocnSpider(Spider):
             # 微博
             yield Request(self.weibo_url.format(uid=uid, page=1), callback=self.parse_weibos,
                           meta={'page': 1, 'uid': uid})
+
+        def parse_follows(self, response):
+            """
+            解析用户关注
+            :param response: Response对象
+            """
+            result = json.loads(response.text)
+            if result.get('ok') and result.get('data').get('cards') and len(result.get('data').get('cards')) and \
+                    result.get('data').get('cards')[-1].get(
+                            'card_group'):
+                # 解析用户
+                follows = result.get('data').get('cards')[-1].get('card_group')
+                for follow in follows:
+                    if follow.get('user'):
+                        uid = follow.get('user').get('id')
+                        yield Request(self.user_url.format(uid=uid), callback=self.parse_user)
+
+                uid = response.meta.get('uid')
+                # 关注列表
+                user_relation_item = UserRelationItem()
+                follows = [{'id': follow.get('user').get('id'), 'name': follow.get('user').get('screen_name')} for
+                           follow in
+                           follows]
+                user_relation_item['id'] = uid
+                user_relation_item['follows'] = follows
+                user_relation_item['fans'] = []
+                yield user_relation_item
+                # 下一页关注
+                page = response.meta.get('page') + 1
+                yield Request(self.follow_url.format(uid=uid, page=page),
+                              callback=self.parse_follows, meta={'page': page, 'uid': uid})
