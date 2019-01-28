@@ -32,3 +32,12 @@ class WeiboPipeline():
         if re.match('\d{2}-\d{2}', date):
             date = time.strftime('%Y-', time.localtime()) + date + ' 00:00'
         return date
+
+    def process_item(self, item, spider):
+        if isinstance(item, WeiboItem):
+            if item.get('created_at'):
+                item['created_at'] = item['created_at'].strip()
+                item['created_at'] = self.parse_time(item.get('created_at'))
+            if item.get('pictures'):
+                item['pictures'] = [pic.get('url') for pic in item.get('pictures')]
+        return item
