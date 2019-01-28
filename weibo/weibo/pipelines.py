@@ -6,6 +6,15 @@
 # See: https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 import re, time
 
+from weibo.items import *
+
+
+class TimePipeline():
+    def process_item(self, item, spider):
+        if isinstance(item, UserItem) or isinstance(item, WeiboItem):
+            now = time.strftime('%Y-%m-%d %H:%M', time.localtime())
+            item['crawled_at'] = now
+        return item
 
 class WeiboPipeline():
     def parse_time(self, date):
