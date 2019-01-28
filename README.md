@@ -1,0 +1,2 @@
+# Scrapy_weibo
+基于Python3_Scrapy框架_爬取新浪微博
