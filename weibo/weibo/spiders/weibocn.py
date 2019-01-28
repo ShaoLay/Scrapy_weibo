@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
+import json
+
 from scrapy import Request, Spider
+
+from weibo.items import UserItem
 
 
 class WeibocnSpider(Spider):
@@ -16,4 +20,31 @@ class WeibocnSpider(Spider):
             yield Request(self.user_url.format(uid=uid), callback=self.parse_user)
 
     def parse_user(self, response):
-        self.logger.debug(response)
+        """
+        解析用户信息
+        :param response:Response对象
+        :return:
+        """
+        result = json.loads(response.text)
+        if result.get('data').get('userinfo'):
+            user_info = result.get('data').get('userinfo')
+            user_item = UserItem()
+            field_map = {
+                'id': 'id', 'name': 'screen_name', 'avatar': 'profile_image_url', 'cover': 'cover_image_phone',
+                'gender': 'gender', 'description': 'description', 'fans_count': 'followers_count',
+                'follows_count': 'follow_count', 'weibos_count': 'statuses_count', 'verified': 'verified',
+                'verified_reason': 'verified_reason', 'verified_type': 'verified_type'
+            }
+            for field, attr in field_map.items():
+                user_item[field] = user_info.get(attr)
+            yield user_item
+            # 关注
+            uid = user_info.get('id')
+            yield Request(self.follow_url.format(uid=uid, page=1), callback=self.parse_follows,
+                          meta={'page': 1, 'uid': uid})
+            # 粉丝
+            yield Request(self.fan_url.format(uid=uid, page=1), callback=self.parse_fans,
+                          meta={'page': 1, 'uid': uid})
+            # 微博
+            yield Request(self.weibo_url.format(uid=uid, page=1), callback=self.parse_weibos,
+                          meta={'page': 1, 'uid': uid})
