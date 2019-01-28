@@ -3,7 +3,7 @@ import json
 
 from scrapy import Request, Spider
 
-from weibo.items import UserItem
+from weibo.items import UserItem, UserRelationItem
 
 
 class WeibocnSpider(Spider):
@@ -79,3 +79,33 @@ class WeibocnSpider(Spider):
                 page = response.meta.get('page') + 1
                 yield Request(self.follow_url.format(uid=uid, page=page),
                               callback=self.parse_follows, meta={'page': page, 'uid': uid})
+
+        def parse_fans(self, response):
+            """
+            解析用户粉丝
+            :param response: Response对象
+            """
+            result = json.loads(response.text)
+            if result.get('ok') and result.get('data').get('cards') and len(result.get('data').get('cards')) and \
+                    result.get('data').get('cards')[-1].get(
+                            'card_group'):
+                # 解析用户
+                fans = result.get('data').get('cards')[-1].get('card_group')
+                for fan in fans:
+                    if fan.get('user'):
+                        uid = fan.get('user').get('id')
+                        yield Request(self.user_url.format(uid=uid), callback=self.parse_user)
+
+                uid = response.meta.get('uid')
+                # 粉丝列表
+                user_relation_item = UserRelationItem()
+                fans = [{'id': fan.get('user').get('id'), 'name': fan.get('user').get('screen_name')} for fan in
+                        fans]
+                user_relation_item['id'] = uid
+                user_relation_item['fans'] = fans
+                user_relation_item['follows'] = []
+                yield user_relation_item
+                # 下一页粉丝
+                page = response.meta.get('page') + 1
+                yield Request(self.fan_url.format(uid=uid, page=page),
+                              callback=self.parse_fans, meta={'page': page, 'uid': uid})
