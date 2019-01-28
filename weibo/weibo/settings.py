@@ -95,3 +95,13 @@ DOWNLOADER_MIDDLEWARES = {
 #HTTPCACHE_DIR = 'httpcache'
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+
+MONGO_URI = 'localhost'
+
+MONGO_DATABASE = 'weibo'
+
+COOKIES_URL = 'http://localhost:5000/weibo/random'
+
+PROXY_URL = 'http://localhost:5555/random'
+
+RETRY_HTTP_CODES = [401, 403, 408, 414, 500, 502, 503, 504]
